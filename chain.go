@@ -59,7 +59,7 @@ func (l *Ledger) Add(tx Transaction) (Hash, error) {
 	}
 
 	block := l.Genesis
-	hasher.Write([]byte(l.Genesis.Hash))
+	hasher.Write([]byte(block.Hash))
 
 	for block.Next != nil {
 		hasher.Sum([]byte(block.Hash))
@@ -91,4 +91,20 @@ func (l *Ledger) Get(h Hash) (*Block, error) {
 	}
 
 	return nil, errors.New("Block not found")
+}
+
+// HashOf return the hash of the chain (= the hash of its last block)
+func (l *Ledger) HashOf() (Hash, error) {
+	if l.Genesis == nil {
+		return "", errors.New("This ledger is empty")
+	}
+
+	var hash Hash
+	block := l.Genesis
+	for block.Next != nil {
+		hash = block.Hash
+		block = block.Next
+	}
+
+	return hash, nil
 }
