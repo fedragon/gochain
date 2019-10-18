@@ -85,3 +85,100 @@ func TestLedger_Add(t *testing.T) {
 		})
 	}
 }
+
+func TestLedger_HashOf(t *testing.T) {
+	genesis := &Block{
+		Hash:     Hash("c0535e4be2b79ffd93291305436bf889314e4a3faec05ecffcbb7df31ad9e51a"),
+		Tx:       Transaction("Hello"),
+		Previous: nil,
+		Next:     nil,
+	}
+
+	type fields struct {
+		Genesis *Block
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		want    Hash
+		wantErr bool
+	}{
+		{"returns an error with an empty ledger",
+			fields{nil},
+			"",
+			true,
+		},
+		{"returns the hash of the genesis block, when there is exactly one block in the ledger",
+			fields{genesis},
+			genesis.Hash,
+			false,
+		},
+		{"returns the hash of last block, in all other cases",
+			fields{&Block{
+				Hash:     genesis.Hash,
+				Tx:       genesis.Tx,
+				Previous: nil,
+				Next: &Block{
+					Hash:     Hash("776f726c64675de8ebf07b0ca1ed92f3cdce825df28d36d8fdc39904060d2c18b13c096edc"),
+					Tx:       Transaction("world"),
+					Previous: genesis,
+					Next:     nil,
+				},
+			}},
+			Hash("776f726c64675de8ebf07b0ca1ed92f3cdce825df28d36d8fdc39904060d2c18b13c096edc"),
+			false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			l := &Ledger{
+				Genesis: tt.fields.Genesis,
+			}
+			got, err := l.HashOf()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Ledger.HashOf() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("Ledger.HashOf() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestLedger_IsEmpty(t *testing.T) {
+	genesis := &Block{
+		Hash:     Hash("c0535e4be2b79ffd93291305436bf889314e4a3faec05ecffcbb7df31ad9e51a"),
+		Tx:       Transaction("Hello"),
+		Previous: nil,
+		Next:     nil,
+	}
+
+	type fields struct {
+		Genesis *Block
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   bool
+	}{
+		{"returns true if the ledger has no blocks",
+			fields{nil},
+			true,
+		},
+		{"returns false otherwise",
+			fields{genesis},
+			false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			l := Ledger{
+				Genesis: tt.fields.Genesis,
+			}
+			if got := l.IsEmpty(); got != tt.want {
+				t.Errorf("Ledger.IsEmpty() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

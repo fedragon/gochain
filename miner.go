@@ -1,8 +1,8 @@
 package main
 
 import (
+	"errors"
 	"fmt"
-	"log"
 	"math/rand"
 	"time"
 )
@@ -27,9 +27,9 @@ type Miner struct {
 // Mine simulates the resolution of a PoW-like puzzle; for simplicity, I'm returning
 // as result the transaction that this miner would like to add to the blockchain, in
 // case it's the first one to solve the puzzle
-func (m *Miner) Mine() Solution {
+func (m *Miner) Mine() (*Solution, error) {
 	if m.Ledger.IsEmpty() {
-		log.Fatal("There is no solution to an empty ledger")
+		return nil, errors.New("There is no solution to an empty ledger")
 	}
 	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
 	delay := time.Duration(10+rnd.Float64()*100) * time.Millisecond
@@ -41,24 +41,29 @@ func (m *Miner) Mine() Solution {
 
 	ledgerHash, _ := m.Ledger.HashOf()
 
-	return Solution{ledgerHash, Transaction(txID), m.Fees}
+	return &Solution{ledgerHash, Transaction(txID), m.Fees}, nil
 }
 
-// Start starts a loop that periodically trigger a miner to send a PoW solution
+// CollectFees collects fees for this miner and adds them to the total
+func (m *Miner) CollectFees() {
+	for fee := range m.Fees {
+		fmt.Printf("[%v] Collected fee %v\n", m.Address, fee)
+		m.CollectedFees += fee
+		fmt.Printf("[%v] Total collected fees %v\n", m.Address, m.CollectedFees)
+	}
+}
+
+// Start starts a loop that periodically triggers a miner to send a PoW solution
 func (m *Miner) Start() {
 	ticker := time.NewTicker(500 * time.Millisecond)
 
 	go func() {
 		for range ticker.C {
-			m.Solutions <- m.Mine()
+			sol, _ := m.Mine()
+
+			m.Solutions <- *sol
 		}
 	}()
 
-	go func() {
-		for fee := range m.Fees {
-			fmt.Printf("[%v] Collected fee %v\n", m.Address, fee)
-			m.CollectedFees += fee
-			fmt.Printf("[%v] Total collected fees %v\n", m.Address, m.CollectedFees)
-		}
-	}()
+	go m.CollectFees()
 }
