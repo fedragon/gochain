@@ -28,17 +28,50 @@ func (b Block) String() string {
 	return fmt.Sprintf("{ hash: %v, tx: %v, next: %v }", b.Hash, b.Tx, b.Next)
 }
 
+// Prettify returns a human-readable string representing the contents of the block
+func (b Block) Prettify(tabs int) string {
+	next := ""
+
+	if b.Next != nil {
+		next = b.Next.Prettify(tabs + 1)
+	}
+
+	shortHash := fmt.Sprintf("%x", b.Hash[:4])
+
+	tt := "\n"
+	for i := 0; i < tabs; i++ {
+		tt += "\t"
+	}
+
+	return fmt.Sprintf(
+		"{%vHash: %v,%vTx: %v%vNext: %v%v}\n", tt, shortHash, tt, b.Tx, tt, next, tt)
+}
+
 // Ledger represents a blockchain
 type Ledger struct {
 	Genesis *Block
 }
 
+// IsEmpty returns true if the chain is empty, false otherwise
+func (l Ledger) IsEmpty() bool {
+	return l.Genesis == nil
+}
+
 func (l Ledger) String() string {
-	if l.Genesis == nil {
+	if l.IsEmpty() {
 		return "[ ]"
 	}
 
 	return fmt.Sprintf("[ genesis: %v ]\n", l.Genesis)
+}
+
+// Prettify returns a human-readable string representing the contents of the chain
+func (l Ledger) Prettify() string {
+	if l.IsEmpty() {
+		return "[ ]"
+	}
+
+	return fmt.Sprintf("[\n%v\n]", l.Genesis.Prettify(1))
 }
 
 // NewLedger creates a ledger containing a genesis block
@@ -93,7 +126,7 @@ func (l *Ledger) Get(h Hash) (*Block, error) {
 	return nil, errors.New("Block not found")
 }
 
-// HashOf return the hash of the chain (= the hash of its last block)
+// HashOf returns the hash of the chain (= the hash of its last block)
 func (l *Ledger) HashOf() (Hash, error) {
 	if l.Genesis == nil {
 		return "", errors.New("This ledger is empty")

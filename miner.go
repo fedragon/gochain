@@ -2,18 +2,21 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"math/rand"
 	"time"
 )
 
+// Solution represents the PoW solution computed by a miner
 type Solution struct {
 	Delay  time.Duration
 	Hash   Hash
 	NextTx Transaction
 }
 
+// Miner represents a node mining the chain
 type Miner struct {
-	Name      string
+	Address   string
 	NextTx    uint64
 	Ledger    *Ledger
 	Solutions chan<- Solution
@@ -23,12 +26,15 @@ type Miner struct {
 // as result the transaction that this miner would like to add to the blockchain, in
 // case it's the first one to solve the puzzle
 func (m *Miner) Mine() Solution {
+	if m.Ledger.IsEmpty() {
+		log.Fatal("There is no solution to an empty ledger")
+	}
 	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
 	delay := time.Duration(10+rnd.Float64()*100) * time.Millisecond
 
 	time.Sleep(delay)
 
-	txID := fmt.Sprintf("%v-%v", m.Name, m.NextTx)
+	txID := fmt.Sprintf("%v-%v", m.Address, m.NextTx)
 	m.NextTx++
 
 	ledgerHash, _ := m.Ledger.HashOf()
@@ -36,6 +42,7 @@ func (m *Miner) Mine() Solution {
 	return Solution{delay, ledgerHash, Transaction(txID)}
 }
 
+// Start starts a loop that periodically trigger a miner to send a PoW solution
 func (m *Miner) Start() {
 	ticker := time.NewTicker(500 * time.Millisecond)
 

@@ -27,15 +27,12 @@ func main() {
 			ledger.Add(sol.NextTx)
 			fmt.Printf("[%v] HAS been added to the ledger\n", sol.NextTx)
 		} else {
-			fmt.Printf("[%v] has NOT been added to the ledger\n", sol.NextTx)
-			fmt.Printf("Ledger hash changed, someone else solved the puzzle before me!\n")
-			fmt.Printf("Current ledger hash =  %x\n", lh)
-			fmt.Printf("Returned ledger hash = %x\n", sol.Hash)
+			fmt.Printf("[%v] has NOT been added to the ledger: ledger hash does not match\n", sol.NextTx)
 
 			maxConflicts--
 
 			if maxConflicts == 0 {
-				fmt.Printf("\nFinal version of the ledger\n%v\n", ledger)
+				fmt.Println(ledger.Prettify())
 				return
 			}
 		}
