@@ -12,14 +12,17 @@ type Solution struct {
 	Delay  time.Duration
 	Hash   Hash
 	NextTx Transaction
+	Fees   chan float64
 }
 
 // Miner represents a node mining the chain
 type Miner struct {
-	Address   string
-	NextTx    uint64
-	Ledger    *Ledger
-	Solutions chan<- Solution
+	Address       string
+	NextTx        uint64
+	CollectedFees float64
+	Ledger        *Ledger
+	Solutions     chan<- Solution
+	Fees          chan float64
 }
 
 // Mine simulates the resolution of a PoW-like puzzle; for simplicity, I'm returning
@@ -39,7 +42,7 @@ func (m *Miner) Mine() Solution {
 
 	ledgerHash, _ := m.Ledger.HashOf()
 
-	return Solution{delay, ledgerHash, Transaction(txID)}
+	return Solution{delay, ledgerHash, Transaction(txID), m.Fees}
 }
 
 // Start starts a loop that periodically trigger a miner to send a PoW solution
@@ -49,6 +52,14 @@ func (m *Miner) Start() {
 	go func() {
 		for range ticker.C {
 			m.Solutions <- m.Mine()
+		}
+	}()
+
+	go func() {
+		for fee := range m.Fees {
+			fmt.Printf("[%v] Collected fee %v\n", m.Address, fee)
+			m.CollectedFees += fee
+			fmt.Printf("[%v] Total collected fees %v\n", m.Address, m.CollectedFees)
 		}
 	}()
 }
