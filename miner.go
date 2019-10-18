@@ -9,7 +9,6 @@ import (
 
 // Solution represents the PoW solution computed by a miner
 type Solution struct {
-	Delay  time.Duration
 	Hash   Hash
 	NextTx Transaction
 	Fees   chan float64
@@ -42,7 +41,7 @@ func (m *Miner) Mine() Solution {
 
 	ledgerHash, _ := m.Ledger.HashOf()
 
-	return Solution{delay, ledgerHash, Transaction(txID), m.Fees}
+	return Solution{ledgerHash, Transaction(txID), m.Fees}
 }
 
 // Start starts a loop that periodically trigger a miner to send a PoW solution
