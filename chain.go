@@ -105,6 +105,27 @@ func (l *Ledger) Add(tx Transaction) (Hash, error) {
 	return hash, nil
 }
 
+// Get retrieves a block from the chain, if found; returns an err
+func (l *Ledger) Get(h Hash) (*Block, error) {
+	if l.IsEmpty() {
+		return nil, errors.New("This ledger is empty")
+	}
+
+	block := l.Genesis
+	hash := block.Hash
+
+	for block.Next != nil {
+		if hash == h {
+			return block, nil
+		}
+
+		block = block.Next
+		hash = block.Hash
+	}
+
+	return nil, errors.New("Block not found")
+}
+
 // HashOf returns the hash of the chain (= the hash of its last block)
 func (l *Ledger) HashOf() (Hash, error) {
 	if l.IsEmpty() {

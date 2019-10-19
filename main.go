@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 	"time"
 )
@@ -10,8 +11,14 @@ func update(ledger *Ledger, solutions chan Solution) {
 	maxConflicts := 10
 
 	for sol := range solutions {
-		fmt.Printf("[%v] %v\n", time.Now(), sol.NextTx)
-		if lh, _ := ledger.HashOf(); lh == sol.Hash {
+		lh, err := ledger.HashOf()
+		if err != nil {
+			log.Fatal("The ledger cannot be empty at this point. Something went wrong")
+		}
+
+		fmt.Printf("[%v] Received solution %v\n", time.Now(), sol.NextTx)
+
+		if lh == sol.Hash {
 			ledger.Add(sol.NextTx)
 			sol.Fees <- 0.001
 			fmt.Printf("[%v] %v HAS been added to the ledger\n", time.Now(), sol.NextTx)
