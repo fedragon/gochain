@@ -40,14 +40,11 @@ func main() {
 	solutions := make(chan Solution, 10)
 
 	for i := 0; i < 10; i++ {
-		miner := Miner{
+		miner := NewMiner(
 			strconv.FormatInt(int64(i+1), 10),
-			1,
-			0.0,
 			ledger,
 			solutions,
-			make(chan float64),
-		}
+		)
 		miner.Start()
 	}
 
