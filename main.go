@@ -1,52 +1,36 @@
 package main
 
-import (
-	"fmt"
-	"log"
-	"strconv"
-	"time"
-)
+import "fmt"
 
-func update(ledger *Ledger, solutions chan Solution) {
-	maxConflicts := 10
+func receive(ledger *Ledger, updates chan<- Ledger, submissions <-chan Block) {
+	hash, _ := ledger.HashOf()
 
-	for sol := range solutions {
-		lh, err := ledger.HashOf()
-		if err != nil {
-			log.Fatal("The ledger cannot be empty at this point. Something went wrong")
+	for b := range submissions {
+		block := b
+		fmt.Println("Received block", block)
+
+		if hash == block.Previous.Hash {
+			ledger.Append(&block)
+			hash, _ = ledger.HashOf()
 		}
 
-		fmt.Printf("[%v] Received solution %v\n", time.Now(), sol.NextTx)
-
-		if lh == sol.Hash {
-			ledger.Add(sol.NextTx)
-			sol.Fees <- 0.001
-			fmt.Printf("[%v] %v HAS been added to the ledger\n", time.Now(), sol.NextTx)
-		} else {
-			fmt.Printf("[%v] %v has NOT been added to the ledger\n", time.Now(), sol.NextTx)
-
-			maxConflicts--
-
-			if maxConflicts == 0 {
-				fmt.Println(ledger.Prettify())
-				return
-			}
-		}
+		updates <- *ledger
 	}
 }
 
 func main() {
-	var ledger *Ledger = NewLedger("0-0")
-	solutions := make(chan Solution, 10)
+	ledger := NewLedger("We ❤️ blockchains")
 
-	for i := 0; i < 10; i++ {
-		miner := NewMiner(
-			strconv.FormatInt(int64(i+1), 10),
-			ledger,
-			solutions,
-		)
-		miner.Start()
+	updates := make(chan Ledger)
+	submissions := make(chan Block)
+	node := &Node{
+		Updates:     updates,
+		Submissions: submissions,
 	}
 
-	update(ledger, solutions)
+	go node.Run()
+
+	updates <- *ledger
+
+	receive(ledger, updates, submissions)
 }
