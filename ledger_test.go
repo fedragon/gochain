@@ -112,20 +112,17 @@ func TestLedger_HashOf(t *testing.T) {
 		Genesis *Block
 	}
 	tests := []struct {
-		name    string
-		fields  fields
-		want    Hash
-		wantErr bool
+		name   string
+		fields fields
+		want   Hash
 	}{
 		{"returns an error with an empty ledger",
 			fields{nil},
 			"",
-			true,
 		},
 		{"returns the hash of the genesis block, when there is exactly one block in the ledger",
 			fields{genesis},
 			genesis.Hash,
-			false,
 		},
 		{"returns the hash of last block, in all other cases",
 			fields{&Block{
@@ -140,7 +137,6 @@ func TestLedger_HashOf(t *testing.T) {
 				},
 			}},
 			Hash("776f726c64675de8ebf07b0ca1ed92f3cdce825df28d36d8fdc39904060d2c18b13c096edc"),
-			false,
 		},
 	}
 	for _, tt := range tests {
@@ -148,11 +144,7 @@ func TestLedger_HashOf(t *testing.T) {
 			l := &Ledger{
 				Genesis: tt.fields.Genesis,
 			}
-			got, err := l.HashOf()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Ledger.HashOf() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
+			got := l.HashOf()
 			if got != tt.want {
 				t.Errorf("Ledger.HashOf() = %v, want %v", got, tt.want)
 			}

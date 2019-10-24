@@ -1,9 +1,7 @@
 package main
 
 import (
-	"crypto/sha256"
 	"fmt"
-	"strconv"
 	"time"
 )
 
@@ -15,60 +13,36 @@ type Data string
 
 // Block represents a block in the chain
 type Block struct {
-	Index    int
-	Hash     Hash
-	Data     Data
-	Previous *Block
-	Next     *Block
+	Index     int
+	Hash      Hash
+	Data      Data
+	Timestamp time.Time
+	Previous  *Block
+	Next      *Block
 }
 
 // Create creates an unverified block for provided ledger
 func Create(ledger *Ledger, data Data) (*Block, error) {
-	var index int
-	var lastHash Hash
-	var last *Block
+	last := ledger.Last()
+	now := time.Now()
 
-	if !ledger.IsEmpty() {
-		last = ledger.Genesis
-
-		for last.Next != nil {
-			last = last.Next
-		}
-
+	index := 0
+	if last != nil {
 		index = last.Index
-		lastHash = last.Hash
 	}
 
-	hash, err := hashOf(index, lastHash, time.Now(), data)
-
+	hash, err := CalculateHash(last, now, data)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Block{
-		Index:    index + 1,
-		Hash:     hash,
-		Data:     data,
-		Previous: last,
+		Index:     index + 1,
+		Hash:      hash,
+		Data:      data,
+		Timestamp: now,
+		Previous:  last,
 	}, nil
-}
-
-func hashOf(index int, previous Hash, timestamp time.Time, data Data) (Hash, error) {
-	hasher := sha256.New()
-
-	hasher.Write([]byte(strconv.Itoa(index)))
-	hasher.Write([]byte(previous))
-	hasher.Write([]byte(data))
-	ts, err := timestamp.In(time.UTC).MarshalBinary()
-
-	if err != nil {
-		return "", err
-	}
-
-	hasher.Write(ts)
-	hash := Hash(fmt.Sprintf("%x", hasher.Sum(nil)))
-
-	return hash, nil
 }
 
 func (b Block) String() string {

@@ -2,16 +2,25 @@ package main
 
 import "fmt"
 
-func receive(ledger *Ledger, updates chan<- Ledger, submissions <-chan Block) {
-	hash, _ := ledger.HashOf()
+func verify(ledger *Ledger, unverified *Block) bool {
+	last := ledger.Last()
 
+	hash, err := hashOf(last.Index, last.Hash, unverified.Timestamp, unverified.Data)
+	if err != nil {
+		return false
+	}
+
+	return hash == unverified.Hash
+}
+
+func receive(ledger *Ledger, updates chan<- Ledger, submissions <-chan Block) {
 	for b := range submissions {
 		block := b
-		fmt.Println("Received block", block)
+		fmt.Println("Received block", block.Hash)
 
-		if hash == block.Previous.Hash {
+		if verify(ledger, &block) {
 			ledger.Append(&block)
-			hash, _ = ledger.HashOf()
+			fmt.Println("New ledger hash", ledger.HashOf())
 		}
 
 		updates <- *ledger

@@ -47,13 +47,13 @@ func NewLedger(data Data) *Ledger {
 
 // Append appends a block to the end of the chain
 func (l *Ledger) Append(next *Block) {
-	block := l.Genesis
+	last := l.Last()
 
-	for block.Next != nil {
-		block = block.Next
+	if last == nil {
+		l.Genesis = next
 	}
 
-	block.Next = next
+	last.Next = next
 }
 
 // Get retrieves a block from the chain, if found; returns an err
@@ -77,17 +77,27 @@ func (l *Ledger) Get(h Hash) (*Block, error) {
 	return nil, errors.New("Block not found")
 }
 
-// HashOf returns the hash of the chain (= the hash of its last block)
-func (l *Ledger) HashOf() (Hash, error) {
+// Last returns the last block in the ledger
+func (l *Ledger) Last() *Block {
 	if l.IsEmpty() {
-		return "", errors.New("This ledger is empty")
+		return nil
 	}
 
 	block := l.Genesis
-
 	for block.Next != nil {
 		block = block.Next
 	}
 
-	return block.Hash, nil
+	return block
+}
+
+// HashOf returns the hash of the chain (= the hash of its last block)
+func (l *Ledger) HashOf() Hash {
+	last := l.Last()
+
+	if last == nil {
+		return ""
+	}
+
+	return last.Hash
 }
