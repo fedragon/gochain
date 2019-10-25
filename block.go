@@ -17,8 +17,8 @@ type Block struct {
 	Hash      Hash
 	Data      Data
 	Timestamp time.Time
-	Previous  *Block
-	Next      *Block
+	Previous  *Block `json:"-"`
+	Next      *Block `json:",omitempty"`
 }
 
 // Create creates an unverified block for provided ledger
