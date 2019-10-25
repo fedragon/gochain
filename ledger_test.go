@@ -116,7 +116,7 @@ func TestLedger_HashOf(t *testing.T) {
 		fields fields
 		want   Hash
 	}{
-		{"returns an error with an empty ledger",
+		{"returns an empty string with an empty ledger",
 			fields{nil},
 			"",
 		},
@@ -302,6 +302,57 @@ func TestDeepEqualNoHash(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := DeepEqualNoHash(tt.args.b, tt.args.c); got != tt.want {
 				t.Errorf("DeepEqualNoHash() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestLedger_Last(t *testing.T) {
+	genesis := &Block{
+		Hash:     Hash("c0535e4be2b79ffd93291305436bf889314e4a3faec05ecffcbb7df31ad9e51a"),
+		Data:     Data("Hello"),
+		Previous: nil,
+		Next:     nil,
+	}
+	other := &Block{
+		Hash:     Hash("776f726c64675de8ebf07b0ca1ed92f3cdce825df28d36d8fdc39904060d2c18b13c096edc"),
+		Data:     Data("world"),
+		Previous: genesis,
+		Next:     nil,
+	}
+
+	type fields struct {
+		Genesis *Block
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   *Block
+	}{
+		{"returns nil, if the ledger is empty",
+			fields{nil},
+			nil,
+		},
+		{"returns the genesis block, if there is only one block in the ledger",
+			fields{genesis},
+			genesis,
+		},
+		{"returns the last block in the ledger",
+			fields{&Block{
+				Hash: genesis.Hash,
+				Data: genesis.Data,
+				Next: other,
+			}},
+			other,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			l := &Ledger{
+				Genesis: tt.fields.Genesis,
+			}
+			if got := l.Last(); !DeepEqualNoHash(got, tt.want) {
+				t.Errorf("Ledger.Last() = %v, want %v", got, tt.want)
 			}
 		})
 	}
