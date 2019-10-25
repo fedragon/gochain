@@ -1,34 +1,39 @@
 package main
 
 import (
-	"log"
-	"time"
+	"fmt"
 )
 
 // Node represents a node submitting new blocks to the ledger
 type Node struct {
-	Address     string
-	Updates     <-chan Ledger
-	Submissions chan<- Block
+	Updates    <-chan Ledger
+	Unverified <-chan Block
+	Verified   chan<- Block
+}
+
+// verifies a block before it's accepted in the ledger
+func verify(ledger *Ledger, unverified Block) bool {
+	last := ledger.Last()
+
+	hash, err := hashOf(last.Index, last.Hash, unverified.Timestamp, unverified.Data)
+	if err != nil {
+		return false
+	}
+
+	return hash == unverified.Hash
 }
 
 // Run executes the main loop of a node, periodically submitting new blocks and
 // receiving ledger updates
 func (n *Node) Run() {
-	t := time.NewTicker(time.Millisecond * 500)
 	var ledger *Ledger
 
 	for {
 		select {
-		case <-t.C:
-			if ledger != nil {
-				block, err := Create(ledger, "foobar")
-
-				if err != nil {
-					log.Println("Unable to create block")
-				}
-
-				n.Submissions <- *block
+		case block := <-n.Unverified:
+			if verify(ledger, block) {
+				fmt.Println("Verified block", block.Hash)
+				n.Verified <- block
 			}
 		case updatedLedger := <-n.Updates:
 			ledger = &updatedLedger
