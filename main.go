@@ -10,15 +10,38 @@ import (
 	"github.com/gorilla/mux"
 )
 
-var chain *Chain
-var unverified chan Block
+// ChainHandler provides a chain to HTTP handlers
+type ChainHandler struct {
+	Chain *Chain
+}
+
+// AddBlockHandler manages requests to add blocks to the chain
+type AddBlockHandler struct {
+	ChainHandler
+	Unverified chan Block
+}
+
+// GetBlockHandler manages requests to get blocks
+type GetBlockHandler struct {
+	ChainHandler
+}
+
+// GetChainHandler manages requests to get the whole chain
+type GetChainHandler struct {
+	ChainHandler
+}
 
 // BlockRequest describes the POST body of a request to create a new block
 type BlockRequest struct {
 	Data Data `json:"data"`
 }
 
-func blockHandler(w http.ResponseWriter, r *http.Request) {
+func healthCheckHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+}
+
+func (adh *AddBlockHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	blockReq := &BlockRequest{}
 
 	body, err := ioutil.ReadAll(r.Body)
@@ -33,34 +56,60 @@ func blockHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	block, err := Create(chain, blockReq.Data)
+	block, err := Create(adh.Chain, blockReq.Data)
 	if err != nil {
 		log.Println("Unable to create block")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	unverified <- *block
+	adh.Unverified <- *block
 }
 
-func chainHandler(w http.ResponseWriter, r *http.Request) {
+func (gbh *GetBlockHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	hash := Hash(vars["hash"])
+
+	block, err := gbh.Chain.Get(hash)
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	err := json.NewEncoder(w).Encode(chain)
+	err = json.NewEncoder(w).Encode(block)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+
+}
+
+func (gch *GetChainHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	err := json.NewEncoder(w).Encode(gch.Chain)
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 }
 
-func serve() {
+func serve(chain *Chain, unverified chan Block) {
+	chainHandler := ChainHandler{chain}
+
 	router := mux.NewRouter()
-	router.HandleFunc("/chain", chainHandler).Methods("GET")
-	router.HandleFunc("/block", blockHandler).Methods("POST")
+	router.HandleFunc("/healthy", healthCheckHandler).Methods("GET")
+
+	router.Handle("/chain", &GetChainHandler{chainHandler}).Methods("GET")
+	sub := router.PathPrefix("/block").Subrouter()
+	sub.Handle("/",
+		&AddBlockHandler{chainHandler, unverified}).Methods("POST")
+	sub.Handle("/{hash}",
+		&GetBlockHandler{chainHandler}).Methods("GET")
 
 	http.ListenAndServe(":9999", router)
 }
 
-func append(verified <-chan Block) {
+func append(chain *Chain, verified <-chan Block) {
 	for b := range verified {
 		block := b
 		chain.Append(&block)
@@ -69,8 +118,8 @@ func append(verified <-chan Block) {
 }
 
 func main() {
-	chain = NewChain("We ❤️ blockchains")
-	unverified = make(chan Block)
+	chain := NewChain("We ❤️ blockchains")
+	unverified := make(chan Block)
 
 	updates := make(chan Chain)
 	verified := make(chan Block)
@@ -83,7 +132,7 @@ func main() {
 	go node.Run()
 	updates <- *chain
 
-	go append(verified)
+	go append(chain, verified)
 
-	serve()
+	serve(chain, unverified)
 }

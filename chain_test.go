@@ -1,6 +1,7 @@
 package main
 
 import (
+	"reflect"
 	"testing"
 )
 
@@ -353,6 +354,79 @@ func TestChain_Last(t *testing.T) {
 			}
 			if got := l.Last(); !DeepEqualNoHash(got, tt.want) {
 				t.Errorf("Chain.Last() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestChain_Get(t *testing.T) {
+	genesis := &Block{
+		Hash:     Hash("c0535e4be2b79ffd93291305436bf889314e4a3faec05ecffcbb7df31ad9e51a"),
+		Data:     Data("Hello"),
+		Previous: nil,
+		Next:     nil,
+	}
+	other := &Block{
+		Hash:     Hash("776f726c64675de8ebf07b0ca1ed92f3cdce825df28d36d8fdc39904060d2c18b13c096edc"),
+		Data:     Data("world"),
+		Previous: genesis,
+		Next:     nil,
+	}
+
+	type fields struct {
+		Genesis *Block
+	}
+	type args struct {
+		h Hash
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    *Block
+		wantErr bool
+	}{
+		{"returns an error if the chain has not been initialized yet",
+			fields{nil},
+			args{"irrelevant"},
+			nil,
+			true,
+		},
+		{"returns nil if a block with provided hash is not found",
+			fields{genesis},
+			args{"notthegenesishash"},
+			nil,
+			false,
+		},
+		{"returns the genesis block, if provided its hash",
+			fields{genesis},
+			args{genesis.Hash},
+			genesis,
+			false,
+		},
+		{"returns the block matching provided hash, if found",
+			fields{&Block{
+				Hash: genesis.Hash,
+				Data: genesis.Data,
+				Next: other,
+			}},
+			args{other.Hash},
+			other,
+			false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			l := &Chain{
+				Genesis: tt.fields.Genesis,
+			}
+			got, err := l.Get(tt.args.h)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Chain.Get() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Chain.Get() = %v, want %v", got, tt.want)
 			}
 		})
 	}

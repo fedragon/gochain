@@ -65,6 +65,10 @@ func (l *Chain) Get(h Hash) (*Block, error) {
 	block := l.Genesis
 	hash := block.Hash
 
+	if hash == h {
+		return block, nil
+	}
+
 	for block.Next != nil {
 		if hash == h {
 			return block, nil
@@ -74,7 +78,11 @@ func (l *Chain) Get(h Hash) (*Block, error) {
 		hash = block.Hash
 	}
 
-	return nil, errors.New("Block not found")
+	if hash == h {
+		return block, nil
+	}
+
+	return nil, nil
 }
 
 // Last returns the last block in the chain
