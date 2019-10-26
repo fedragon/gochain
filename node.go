@@ -4,16 +4,16 @@ import (
 	"fmt"
 )
 
-// Node represents a node submitting new blocks to the ledger
+// Node represents a node submitting new blocks to the chain
 type Node struct {
-	Updates    <-chan Ledger
+	Updates    <-chan Chain
 	Unverified <-chan Block
 	Verified   chan<- Block
 }
 
-// verifies a block before it's accepted in the ledger
-func verify(ledger *Ledger, unverified Block) bool {
-	last := ledger.Last()
+// verifies a block before it's accepted in the chain
+func verify(chain *Chain, unverified Block) bool {
+	last := chain.Last()
 
 	hash, err := hashOf(last.Index, last.Hash, unverified.Timestamp, unverified.Data)
 	if err != nil {
@@ -24,19 +24,19 @@ func verify(ledger *Ledger, unverified Block) bool {
 }
 
 // Run executes the main loop of a node, periodically submitting new blocks and
-// receiving ledger updates
+// receiving chain updates
 func (n *Node) Run() {
-	var ledger *Ledger
+	var chain *Chain
 
 	for {
 		select {
 		case block := <-n.Unverified:
-			if verify(ledger, block) {
+			if verify(chain, block) {
 				fmt.Println("Verified block", block.Hash)
 				n.Verified <- block
 			}
-		case updatedLedger := <-n.Updates:
-			ledger = &updatedLedger
+		case updatedChain := <-n.Updates:
+			chain = &updatedChain
 		}
 	}
 }

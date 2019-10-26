@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-// CalculateHash calculates the hash using the hash of the last block in the ledger,
+// CalculateHash calculates the hash using the hash of the last block in the chain,
 // the timestamp, and data provided
 func CalculateHash(last *Block, timestamp time.Time, data Data) (Hash, error) {
 	var index int = 1

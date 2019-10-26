@@ -6,17 +6,17 @@ import (
 	"log"
 )
 
-// Ledger represents a blockchain
-type Ledger struct {
+// Chain represents a blockchain
+type Chain struct {
 	Genesis *Block
 }
 
 // IsEmpty returns true if the chain is empty, false otherwise
-func (l Ledger) IsEmpty() bool {
+func (l Chain) IsEmpty() bool {
 	return l.Genesis == nil
 }
 
-func (l Ledger) String() string {
+func (l Chain) String() string {
 	if l.IsEmpty() {
 		return "[ ]"
 	}
@@ -25,7 +25,7 @@ func (l Ledger) String() string {
 }
 
 // Prettify returns a human-readable string representing the contents of the chain
-func (l Ledger) Prettify() string {
+func (l Chain) Prettify() string {
 	if l.IsEmpty() {
 		return "[ ]"
 	}
@@ -33,20 +33,20 @@ func (l Ledger) Prettify() string {
 	return fmt.Sprintf("[\n%v\n]", l.Genesis.Prettify(1))
 }
 
-// NewLedger creates a ledger containing a genesis block
-func NewLedger(data Data) *Ledger {
-	l := &Ledger{}
+// NewChain creates a chain containing a genesis block
+func NewChain(data Data) *Chain {
+	l := &Chain{}
 	block, err := Create(l, data)
 
 	if err != nil {
-		log.Fatalf("Could not initialize ledger: %v\n", err)
+		log.Fatalf("Could not initialize chain: %v\n", err)
 	}
 
-	return &Ledger{Genesis: block}
+	return &Chain{Genesis: block}
 }
 
 // Append appends a block to the end of the chain
-func (l *Ledger) Append(next *Block) {
+func (l *Chain) Append(next *Block) {
 	last := l.Last()
 
 	if last == nil {
@@ -57,9 +57,9 @@ func (l *Ledger) Append(next *Block) {
 }
 
 // Get retrieves a block from the chain, if found; returns an err
-func (l *Ledger) Get(h Hash) (*Block, error) {
+func (l *Chain) Get(h Hash) (*Block, error) {
 	if l.IsEmpty() {
-		return nil, errors.New("This ledger is empty")
+		return nil, errors.New("This chain is empty")
 	}
 
 	block := l.Genesis
@@ -77,8 +77,8 @@ func (l *Ledger) Get(h Hash) (*Block, error) {
 	return nil, errors.New("Block not found")
 }
 
-// Last returns the last block in the ledger
-func (l *Ledger) Last() *Block {
+// Last returns the last block in the chain
+func (l *Chain) Last() *Block {
 	if l.IsEmpty() {
 		return nil
 	}
@@ -92,7 +92,7 @@ func (l *Ledger) Last() *Block {
 }
 
 // HashOf returns the hash of the chain (= the hash of its last block)
-func (l *Ledger) HashOf() Hash {
+func (l *Chain) HashOf() Hash {
 	last := l.Last()
 
 	if last == nil {

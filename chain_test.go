@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func DeepEqual(l, m *Ledger) bool {
+func DeepEqual(l, m *Chain) bool {
 	return DeepEqualNoHash(l.Genesis, m.Genesis)
 }
 
@@ -22,15 +22,15 @@ func DeepEqualNoHash(b, c *Block) bool {
 		DeepEqualNoHash(b.Next, c.Next)
 }
 
-func TestNewLedger(t *testing.T) {
+func TestNewChain(t *testing.T) {
 	tests := []struct {
 		name string
 		data Data
-		want *Ledger
+		want *Chain
 	}{
-		{"generates a new ledger, containing a genesis block",
+		{"generates a new chain, containing a genesis block",
 			"Hello world!",
-			&Ledger{&Block{
+			&Chain{&Block{
 				Index:    1,
 				Hash:     "c0535e4be2b79ffd93291305436bf889314e4a3faec05ecffcbb7df31ad9e51a",
 				Data:     "Hello world!",
@@ -41,14 +41,14 @@ func TestNewLedger(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewLedger(tt.data); !DeepEqual(got, tt.want) {
-				t.Errorf("NewLedger() = %v, want %v", got, tt.want)
+			if got := NewChain(tt.data); !DeepEqual(got, tt.want) {
+				t.Errorf("NewChain() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func TestLedger_Append(t *testing.T) {
+func TestChain_Append(t *testing.T) {
 	genesis := &Block{
 		Hash:     Hash("c0535e4be2b79ffd93291305436bf889314e4a3faec05ecffcbb7df31ad9e51a"),
 		Data:     Data("Hello"),
@@ -60,13 +60,13 @@ func TestLedger_Append(t *testing.T) {
 		b *Block
 	}
 	tests := []struct {
-		name       string
-		ledger     Ledger
-		args       args
-		wantLedger *Ledger
+		name      string
+		chain     Chain
+		args      args
+		wantChain *Chain
 	}{
-		{"appends a block to a non-empty ledger",
-			Ledger{Genesis: genesis},
+		{"appends a block to a non-empty chain",
+			Chain{Genesis: genesis},
 			args{
 				&Block{
 					Hash:     Hash("foo"),
@@ -74,7 +74,7 @@ func TestLedger_Append(t *testing.T) {
 					Previous: genesis,
 					Next:     nil},
 			},
-			&Ledger{
+			&Chain{
 				Genesis: &Block{
 					Hash:     genesis.Hash,
 					Data:     genesis.Data,
@@ -88,19 +88,19 @@ func TestLedger_Append(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			l := &Ledger{
+			l := &Chain{
 				Genesis: genesis,
 			}
 
 			l.Append(tt.args.b)
-			if !DeepEqual(l, tt.wantLedger) {
-				t.Errorf("Ledger.Append() =\ngot  %v,\nwant %v\n", l, tt.wantLedger)
+			if !DeepEqual(l, tt.wantChain) {
+				t.Errorf("Chain.Append() =\ngot  %v,\nwant %v\n", l, tt.wantChain)
 			}
 		})
 	}
 }
 
-func TestLedger_HashOf(t *testing.T) {
+func TestChain_HashOf(t *testing.T) {
 	genesis := &Block{
 		Hash:     Hash("c0535e4be2b79ffd93291305436bf889314e4a3faec05ecffcbb7df31ad9e51a"),
 		Data:     Data("Hello"),
@@ -116,11 +116,11 @@ func TestLedger_HashOf(t *testing.T) {
 		fields fields
 		want   Hash
 	}{
-		{"returns an empty string with an empty ledger",
+		{"returns an empty string with an empty chain",
 			fields{nil},
 			"",
 		},
-		{"returns the hash of the genesis block, when there is exactly one block in the ledger",
+		{"returns the hash of the genesis block, when there is exactly one block in the chain",
 			fields{genesis},
 			genesis.Hash,
 		},
@@ -141,18 +141,18 @@ func TestLedger_HashOf(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			l := &Ledger{
+			l := &Chain{
 				Genesis: tt.fields.Genesis,
 			}
 			got := l.HashOf()
 			if got != tt.want {
-				t.Errorf("Ledger.HashOf() = %v, want %v", got, tt.want)
+				t.Errorf("Chain.HashOf() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func TestLedger_IsEmpty(t *testing.T) {
+func TestChain_IsEmpty(t *testing.T) {
 	genesis := &Block{
 		Hash:     Hash("c0535e4be2b79ffd93291305436bf889314e4a3faec05ecffcbb7df31ad9e51a"),
 		Data:     Data("Hello"),
@@ -168,7 +168,7 @@ func TestLedger_IsEmpty(t *testing.T) {
 		fields fields
 		want   bool
 	}{
-		{"returns true if the ledger has no blocks",
+		{"returns true if the chain has no blocks",
 			fields{nil},
 			true,
 		},
@@ -179,11 +179,11 @@ func TestLedger_IsEmpty(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			l := Ledger{
+			l := Chain{
 				Genesis: tt.fields.Genesis,
 			}
 			if got := l.IsEmpty(); got != tt.want {
-				t.Errorf("Ledger.IsEmpty() = %v, want %v", got, tt.want)
+				t.Errorf("Chain.IsEmpty() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -307,7 +307,7 @@ func TestDeepEqualNoHash(t *testing.T) {
 	}
 }
 
-func TestLedger_Last(t *testing.T) {
+func TestChain_Last(t *testing.T) {
 	genesis := &Block{
 		Hash:     Hash("c0535e4be2b79ffd93291305436bf889314e4a3faec05ecffcbb7df31ad9e51a"),
 		Data:     Data("Hello"),
@@ -329,15 +329,15 @@ func TestLedger_Last(t *testing.T) {
 		fields fields
 		want   *Block
 	}{
-		{"returns nil, if the ledger is empty",
+		{"returns nil, if the chain is empty",
 			fields{nil},
 			nil,
 		},
-		{"returns the genesis block, if there is only one block in the ledger",
+		{"returns the genesis block, if there is only one block in the chain",
 			fields{genesis},
 			genesis,
 		},
-		{"returns the last block in the ledger",
+		{"returns the last block in the chain",
 			fields{&Block{
 				Hash: genesis.Hash,
 				Data: genesis.Data,
@@ -348,11 +348,11 @@ func TestLedger_Last(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			l := &Ledger{
+			l := &Chain{
 				Genesis: tt.fields.Genesis,
 			}
 			if got := l.Last(); !DeepEqualNoHash(got, tt.want) {
-				t.Errorf("Ledger.Last() = %v, want %v", got, tt.want)
+				t.Errorf("Chain.Last() = %v, want %v", got, tt.want)
 			}
 		})
 	}

@@ -10,7 +10,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-var ledger *Ledger
+var chain *Chain
 var unverified chan Block
 
 // BlockRequest describes the POST body of a request to create a new block
@@ -33,7 +33,7 @@ func blockHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	block, err := Create(ledger, blockReq.Data)
+	block, err := Create(chain, blockReq.Data)
 	if err != nil {
 		log.Println("Unable to create block")
 		w.WriteHeader(http.StatusInternalServerError)
@@ -43,9 +43,9 @@ func blockHandler(w http.ResponseWriter, r *http.Request) {
 	unverified <- *block
 }
 
-func ledgerHandler(w http.ResponseWriter, r *http.Request) {
+func chainHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	err := json.NewEncoder(w).Encode(ledger)
+	err := json.NewEncoder(w).Encode(chain)
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -54,7 +54,7 @@ func ledgerHandler(w http.ResponseWriter, r *http.Request) {
 
 func serve() {
 	router := mux.NewRouter()
-	router.HandleFunc("/ledger", ledgerHandler).Methods("GET")
+	router.HandleFunc("/chain", chainHandler).Methods("GET")
 	router.HandleFunc("/block", blockHandler).Methods("POST")
 
 	http.ListenAndServe(":9999", router)
@@ -63,16 +63,16 @@ func serve() {
 func append(verified <-chan Block) {
 	for b := range verified {
 		block := b
-		ledger.Append(&block)
-		fmt.Println("Appended block", block.Hash, "to the ledger")
+		chain.Append(&block)
+		fmt.Println("Appended block", block.Hash, "to the chain")
 	}
 }
 
 func main() {
-	ledger = NewLedger("We ❤️ blockchains")
+	chain = NewChain("We ❤️ blockchains")
 	unverified = make(chan Block)
 
-	updates := make(chan Ledger)
+	updates := make(chan Chain)
 	verified := make(chan Block)
 	node := &Node{
 		Updates:    updates,
@@ -81,7 +81,7 @@ func main() {
 	}
 
 	go node.Run()
-	updates <- *ledger
+	updates <- *chain
 
 	go append(verified)
 

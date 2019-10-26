@@ -6,8 +6,8 @@ import (
 
 func TestCreate(t *testing.T) {
 	type args struct {
-		ledger *Ledger
-		data   Data
+		chain *Chain
+		data  Data
 	}
 	type result struct {
 		index int
@@ -19,9 +19,9 @@ func TestCreate(t *testing.T) {
 		want    result
 		wantErr bool
 	}{
-		{"creates an unverified block for provided ledger",
+		{"creates an unverified block for provided chain",
 			args{
-				&Ledger{},
+				&Chain{},
 				"Hello",
 			},
 			result{
@@ -33,7 +33,7 @@ func TestCreate(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := Create(tt.args.ledger, tt.args.data)
+			got, err := Create(tt.args.chain, tt.args.data)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Create() error = %v, wantErr %v", err, tt.wantErr)
 				return

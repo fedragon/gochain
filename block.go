@@ -21,9 +21,9 @@ type Block struct {
 	Next      *Block `json:",omitempty"`
 }
 
-// Create creates an unverified block for provided ledger
-func Create(ledger *Ledger, data Data) (*Block, error) {
-	last := ledger.Last()
+// Create creates an unverified block for provided chain
+func Create(chain *Chain, data Data) (*Block, error) {
+	last := chain.Last()
 	now := time.Now()
 
 	index := 0
