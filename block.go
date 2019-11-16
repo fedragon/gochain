@@ -47,27 +47,8 @@ func Create(chain *Chain, data Data) (*Block, error) {
 
 func (b Block) String() string {
 	if b.Next == nil {
-		return fmt.Sprintf("{ hash: %v, data: %v, next: nil }", b.Hash, b.Data)
+		return fmt.Sprintf("{ index: %v, hash: %v, data: %v, timestamp: %v, next: nil }", b.Index, b.Hash, b.Data, b.Timestamp)
 	}
 
-	return fmt.Sprintf("{ hash: %v, data: %v, next: %v }", b.Hash, b.Data, b.Next)
-}
-
-// Prettify returns a human-readable string representing the contents of the block
-func (b Block) Prettify(tabs int) string {
-	next := ""
-
-	if b.Next != nil {
-		next = b.Next.Prettify(tabs + 1)
-	}
-
-	shortHash := fmt.Sprintf("%x", b.Hash[:4])
-
-	tt := "\n"
-	for i := 0; i < tabs; i++ {
-		tt += "\t"
-	}
-
-	return fmt.Sprintf(
-		"{%vHash: %v,%vData: %v%vNext: %v%v}\n", tt, shortHash, tt, b.Data, tt, next, tt)
+	return fmt.Sprintf("{ index: %v, hash: %v, data: %v, timestamp: %v, next: %v }", b.Index, b.Hash, b.Data, b.Timestamp, b.Next)
 }

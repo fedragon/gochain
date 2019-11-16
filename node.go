@@ -4,7 +4,7 @@ import (
 	"fmt"
 )
 
-// Node represents a node submitting new blocks to the chain
+// Node represents a node that verifies new blocks before they are added to the chain
 type Node struct {
 	Updates    <-chan Chain
 	Unverified <-chan Block
@@ -23,8 +23,8 @@ func verify(chain *Chain, unverified Block) bool {
 	return hash == unverified.Hash
 }
 
-// Run executes the main loop of a node, periodically submitting new blocks and
-// receiving chain updates
+// Run executes the main loop of a node, verifying blocks that are waiting to be added
+// to the chain
 func (n *Node) Run() {
 	var chain *Chain
 

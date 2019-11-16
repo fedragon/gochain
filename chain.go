@@ -11,28 +11,6 @@ type Chain struct {
 	Genesis *Block
 }
 
-// IsEmpty returns true if the chain is empty, false otherwise
-func (l Chain) IsEmpty() bool {
-	return l.Genesis == nil
-}
-
-func (l Chain) String() string {
-	if l.IsEmpty() {
-		return "[ ]"
-	}
-
-	return fmt.Sprintf("[ genesis: %v ]\n", l.Genesis)
-}
-
-// Prettify returns a human-readable string representing the contents of the chain
-func (l Chain) Prettify() string {
-	if l.IsEmpty() {
-		return "[ ]"
-	}
-
-	return fmt.Sprintf("[\n%v\n]", l.Genesis.Prettify(1))
-}
-
 // NewChain creates a chain containing a genesis block
 func NewChain(data Data) *Chain {
 	l := &Chain{}
@@ -43,6 +21,11 @@ func NewChain(data Data) *Chain {
 	}
 
 	return &Chain{Genesis: block}
+}
+
+// IsEmpty returns true if the chain is empty, false otherwise
+func (l Chain) IsEmpty() bool {
+	return l.Genesis == nil
 }
 
 // Append appends a block to the end of the chain
@@ -56,7 +39,8 @@ func (l *Chain) Append(next *Block) {
 	last.Next = next
 }
 
-// Get retrieves a block from the chain, if found; returns an err
+// Get retrieves a block from the chain, if found, or nil otherwise;
+// returns an error if the chain is empty
 func (l *Chain) Get(h Hash) (*Block, error) {
 	if l.IsEmpty() {
 		return nil, errors.New("This chain is empty")
@@ -108,4 +92,12 @@ func (l *Chain) HashOf() Hash {
 	}
 
 	return last.Hash
+}
+
+func (l Chain) String() string {
+	if l.IsEmpty() {
+		return "[ ]"
+	}
+
+	return fmt.Sprintf("[ genesis: %v ]\n", l.Genesis)
 }

@@ -17,6 +17,7 @@ func CalculateHash(last *Block, timestamp time.Time, data Data) (Hash, error) {
 		index = last.Index
 		hash = last.Hash
 	}
+
 	return hashOf(index, hash, timestamp, data)
 }
 
