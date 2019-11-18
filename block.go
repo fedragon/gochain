@@ -1,4 +1,4 @@
-package main
+package gochain
 
 import (
 	"fmt"

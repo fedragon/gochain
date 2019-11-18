@@ -2,29 +2,28 @@
 
 Modelling a dead-simple blockchain in Go (mostly to learn Go itself).
 
-## Test
+## Usage
 
-    go test
+```
+// Init chain
+chain := NewChain("We ❤️ blockchains")
 
-## Run
+// Init communication channels
+unverified := make(chan Block)
+updates := make(chan Chain)
+verified := make(chan Block)
 
-    go build
-    ./gochain
+// Init node(s)
+node := &Node{
+    Updates:    updates,
+    Unverified: unverified,
+    Verified:   verified,
+}
+go node.Run()
 
-## API Endpoints
+// Send initial version of the chain to all nodes
+updates <- *chain
 
-### Healthcheck
-
-    curl http://localhost:9999/healthy
-
-### Get chain
-
-    curl http://localhost:9999/chain/
-
-### Add block to chain
-
-    curl -X POST http://localhost:9999/block/ -H 'Content-Type: application/json' -d '{ "data": "Really!"}'
-
-### Get block by hash
-
-    curl http://localhost:9999/block/<hash>
+// Run appender
+go append(chain, verified)
+```
